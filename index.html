@@ -2,14 +2,13 @@
 <html>
 
 <head>
-    <title>maze generator</title>
+    <title>horizontal throw</title>
     <meta charset="utf-8">
 </head>
 
 <body>
     <canvas id="cv" height=800 width=1600></canvas>
     <br>
-    <!-- <button id="start_simulation" onclick="simulation.start();">start simulation</button> -->
     <button onclick="simulation.pause_play();">pause/play</button>
     <label for="time">time</label>
     <input id="time" type="text" value="0" onchange="update_value('time',this.value);simulation.frame(time);">
