@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>maze generator</title>
+    <meta charset="utf-8">
+</head>
+
+<body>
+    <canvas id="cv" height=800 width=1600></canvas>
+    <br>
+    <!-- <button id="start_simulation" onclick="simulation.start();">start simulation</button> -->
+    <button onclick="simulation.pause_play();">pause/play</button>
+    <label for="time">time</label>
+    <input id="time" type="text" value="0" onchange="update_value('time',this.value);simulation.frame(time);">
+
+    <br>
+    <label for="gravity">gravity</label>
+    <input id="gravity" type="text" value="10" onblur="update_value('gravity',this.value);update_simulation();">
+
+    <label for="velocity">velocity</label>
+    <input id="velocity" type="text" value="10" onblur="update_value('velocity',this.value);update_velocity();">
+    <label for="angle">angle</label>
+    <input id="angle" type="range" min="0" max="90" value="45"
+        oninput="this.nextElementSibling.value = update_value('angle',this.value);update_velocity();">
+    <output id="angle_value">45</output>
+
+    <br>
+    <label for="velocity_x">velocity x</label>
+    <input id="velocity_x" type="text"
+        onblur="update_value('velocity_x',this.value);update_velocity_from_components();">
+    <label for="velocity_y">velocity y</label>
+    <input id="velocity_y" type="text"
+        onblur="update_value('velocity_y',this.value);update_velocity_from_components();">
+
+    <script src="index.js"></script>
+</body>
+
+</html>
