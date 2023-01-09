@@ -10,12 +10,15 @@
     <canvas id="cv" height=800 width=1600></canvas>
     <br>
     <button onclick="simulation.pause_play();">pause/play</button>
+    <button onclick="simulation.stop();simulation.frame(0);">restart</button>
     <label for="time">time</label>
     <input id="time" type="text" value="0" onchange="update_value('time',this.value);simulation.frame(time);">
 
     <br>
     <label for="gravity">gravity</label>
     <input id="gravity" type="text" value="10" onblur="update_value('gravity',this.value);update_simulation();">
+    <label for="height">height</label>
+    <input id="height" type="text" value="0" onblur="update_value('height',this.value);update_simulation();">
 
     <label for="velocity">velocity</label>
     <input id="velocity" type="text" value="10" onblur="update_value('velocity',this.value);update_velocity();">
@@ -31,6 +34,12 @@
     <label for="velocity_y">velocity y</label>
     <input id="velocity_y" type="text"
         onblur="update_value('velocity_y',this.value);update_velocity_from_components();">
+
+    <br>
+
+    <label for="min_scale">minimum graph scale</label>
+    <input id="min_scale" type="text" value="50" onblur="update_value('min_scale',this.value);update_velocity();">
+
 
     <script src="index.js"></script>
 </body>

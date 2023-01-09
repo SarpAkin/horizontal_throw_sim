@@ -41,85 +41,122 @@ class Parabola {
     }
 };
 
-function graph_function(ctx, f, xmax, ymax) {
-    let cheight = ctx.canvas.height;
-    let cwidth = ctx.canvas.width;
+var min_scale = 50.0;
 
+class Graph {
     //offsets to graph to the edges of the canvas for drawing text
-    let xoffset = 45;
-    let yoffset = 20;
+    xoffset = 45;
+    yoffset = 20;
 
-    let gwidth = cwidth - xoffset;
-    let gheight = cheight - yoffset;
+    constructor(ctx, xmax, ymax) {
+        this.ctx = ctx;
+        this.xmax = xmax;
+        this.ymax = ymax;
 
-    //give some headroom with offsets
-    let yscale = ymax / (gheight - yoffset);
-    let xscale = xmax / (gwidth - xoffset);
-    let scale = Math.max(yscale, xscale);
-    let inv_scale = 1.0 / scale;
+        this.cheight = ctx.canvas.height;
+        this.cwidth = ctx.canvas.width;
 
-    ctx.beginPath();
-    ctx.moveTo(xoffset, cheight - yoffset);
-    ctx.lineTo(cwidth, cheight - yoffset);
-    ctx.moveTo(xoffset, cheight - yoffset);
-    ctx.lineTo(xoffset, 0);
+        this.gwidth = this.cwidth - this.xoffset;
+        this.gheight = this.cheight - this.yoffset;
 
-    ctx.moveTo(xoffset, cheight - yoffset);
+        //give some headroom with offsets
+        let pheight = this.gheight - this.yoffset;
+        let pwidth = this.gwidth - this.xoffset;
 
-    // pixel_pos * scale = pos
-    // pos / scale = pixel_pos
+        let yscale = this.ymax / pheight;
+        let xscale = this.xmax / pwidth;
 
-    for (i = 0; i < xmax / scale; i++) {
-        ctx.lineTo(i + xoffset, gheight - f(i * scale) * inv_scale);
+        // pixel_pos * scale = pos
+        // pos / scale = pixel_pos
+        this.scale = Math.max(Math.max(yscale, xscale),min_scale / Math.max(pheight,pwidth));
     }
 
-    ctx.stroke();
-
-    ctx.textAlign = "center"
-    ctx.font = "16px serif";
-    function horizontal_graph_text(text, px) {
-        ctx.fillText(text, xoffset + px, cheight - 2);
-
+    //pixel to graph 
+    to_graph_space(x, y) {
+        return [
+            (x - this.xoffset) * this.scale,
+            (this.gheight - y) * this.scale,
+        ];
     }
 
-    let xend = gwidth * scale;
-    let xstep = Math.ceil(xend / 100) * 10;
+    //graph to pixel space relative to canvas
+    to_pixel_space(x, y) {
+        return [
+            x / this.scale + this.xoffset,
+            this.gheight - y / this.scale,
+        ];
+    }
 
-    for (i = 0; i < 11; i++) {
-        let x = xstep * i;
+    graph_function(f) {
+        this.ctx.beginPath();
+        //draw the graph lines
+        this.ctx.moveTo(this.xoffset, this.cheight - this.yoffset);
+        this.ctx.lineTo(this.cwidth, this.cheight - this.yoffset);
+        this.ctx.moveTo(this.xoffset, this.cheight - this.yoffset);
+        this.ctx.lineTo(this.xoffset, 0);
 
-        if (x > xmax) {
-            x = xmax;
-            i = 1000000;//set i to big number to break after this iteration
+        //move back to 0,0 in graph space
+        this.ctx.moveTo(this.xoffset, this.cheight - this.yoffset);
+
+        for (let i = 0; i < this.xmax / this.scale; i++) {
+            let gx = i * this.scale;
+            let [px, py] = this.to_pixel_space(gx, f(gx));
+            this.ctx.lineTo(px, py);
         }
 
-        horizontal_graph_text(x.toFixed(0).toString() + "m", x / scale);
+        this.ctx.stroke();
+
+        this.#draw_graph_numbers();
     }
 
-    ctx.textAlign = "right"
-    function vertical_graph_text(text, py) {
-        ctx.fillText(text, xoffset, gheight - py);
-    }
+    #draw_graph_numbers() {
+        this.ctx.textAlign = "center"
+        this.ctx.font = "16px serif";
+        let horizontal_graph_text = (text, px) => {
+            this.ctx.fillText(text, this.xoffset + px, this.cheight - 2);
+        };
 
-    let yend = gheight * scale;
-    let ystep = Math.ceil(yend / 100) * 10;
+        let xend = this.gwidth * this.scale;
+        let xstep = Math.ceil(xend / 100) * 10;
 
-    for (i = 1; i < 11; i++) {
-        let y = ystep * i;
+        for (let i = 0; i < 11; i++) {
+            let x = xstep * i;
 
-        if (y > ymax) {
-            y = ymax;
-            i = 1000000;//set i to big number to break after this iteration
+            if (x > this.xmax) {
+                x = this.xmax;
+                i = 1000000;//set i to big number to break after this iteration
+            }
+
+            horizontal_graph_text(x.toFixed(0).toString() + "m", x / this.scale);
         }
 
-        vertical_graph_text(y.toFixed(0).toString() + "m", y / scale);
-    }
+        this.ctx.textAlign = "right"
+        let vertical_graph_text = (text, py) => {
+            this.ctx.fillText(text, this.xoffset, this.gheight - py);
+        };
 
-    function world_pos_to_graph_pos(wx, wy) {
-        return [xoffset + wx / scale, gheight - wy / scale];
-    }
+        let yend = this.gheight * this.scale;
+        let ystep = Math.ceil(yend / 100) * 10;
 
-    return world_pos_to_graph_pos;
+        for (let i = 1; i < 11; i++) {
+            let y = ystep * i;
+
+            if (y > this.ymax) {
+                y = this.ymax;
+                i = 1000000;//set i to big number to break after this iteration
+            }
+
+            vertical_graph_text(y.toFixed(0).toString() + "m", y / this.scale);
+        }
+    }
+}
+
+function graph_function(ctx, f, xmax, ymax) {
+    let graph = new Graph(ctx, xmax, ymax);
+    graph.graph_function(f);
+
+    return graph;
+    // return (x, y) => graph.to_pixel_space(x, y);
 }
 
 function graph_parabola(ctx, parabola) {
@@ -201,7 +238,13 @@ class Simulation {
         this.running = false;
         this.t = 0;
     }
+
+    draw() {
+        this.frame(this.t);
+    }
 }
+
+var graph = null;
 
 function simulate_horizontal_throw(vx, vy, g, h) {
     let yt_parabola = new Parabola(-g / 2, vy, h);//-g/2*t^2 + t*vy + h
@@ -215,10 +258,10 @@ function simulate_horizontal_throw(vx, vy, g, h) {
         //clear canvas
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
-        let world_pos_to_graph_pos = graph_parabola(ctx, yx_parabola);
+        graph = graph_parabola(ctx, yx_parabola);
 
         let [bx, by] = ball_position_at_t(t);
-        let [px, py] = world_pos_to_graph_pos(bx, by);
+        let [px, py] = graph.to_pixel_space(bx, by);
 
         fill_circle(px, py, 15);
 
@@ -229,7 +272,6 @@ function simulate_horizontal_throw(vx, vy, g, h) {
         ctx.fillText(`t: ${t.toFixed(2)}s`, width - 20, 20);
         ctx.fillText(`x: ${bx.toFixed(1)}m`, width - 20, 40);
         ctx.fillText(`y: ${by.toFixed(1)}m`, width - 20, 60);
-
     }
 
     let [t1, t2] = yt_parabola.roots();
@@ -261,6 +303,7 @@ var gravity = 10;
 var velocity_x = 10;
 var velocity_y = 10;
 var time = 0.0;
+var height = 0.0;
 
 var simulation = null;
 
@@ -268,7 +311,7 @@ function update_simulation() {
     if (simulation != null) {
         simulation.stop();
     }
-    simulation = simulate_horizontal_throw(velocity_x, velocity_y, gravity, 0);
+    simulation = simulate_horizontal_throw(velocity_x, velocity_y, gravity, height);
     let frame = simulation.frame;
     simulation.frame = (t) => { //override frame
         time = t.toFixed(2);
@@ -306,3 +349,34 @@ function update_velocity_from_components() {
 
 update_velocity();
 update_simulation();
+
+var mouseDown = 0;
+document.body.onmousedown = function () {
+    ++mouseDown;
+}
+document.body.onmouseup = function () {
+    --mouseDown;
+}
+
+canvas.addEventListener("mousemove", (e) => {
+    if (mouseDown == 0) return;
+    if (simulation.running) simulation.stop();
+
+
+    // Get the target
+    const target = e.target;
+
+    // Get the bounding rectangle of target
+    const rect = target.getBoundingClientRect();
+
+    // Mouse position
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    let [gx, gy] = graph.to_graph_space(x, y);
+
+    //clamp the x and divide by velocity to get time
+    simulation.t = time = Math.min(Math.max(gx, 0), graph.xmax) / velocity_x;
+    simulation.draw();
+
+});
